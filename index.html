@@ -89,17 +89,6 @@
       #mute-btn.muted .icon-off { display: block; }
       #mute-btn.muted { color: #93a3b5; }
 
-      /* ---------- 테스트 배너 ---------- */
-      #test-banner {
-        position: fixed; z-index: 7; left: 50%; transform: translateX(-50%);
-        top: calc(env(safe-area-inset-top, 0px) + 218px);
-        background: #7a4b12; color: #ffe9bd;
-        font-size: 12.5px; font-weight: 700;
-        padding: 7px 14px; border-radius: 999px;
-        border: 1px solid rgba(255,255,255,.25);
-        white-space: nowrap;
-      }
-
       /* ---------- 하단 HUD ---------- */
       .hud-bottom {
         position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
@@ -118,12 +107,6 @@
       }
       #touch-btn:active { transform: translateY(2px); box-shadow: 0 2px 10px rgba(217,154,38,.3), 0 0 0 #a87414; }
       #touch-btn[disabled] { opacity: .55; }
-      #test-panel { pointer-events: auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-      #test-panel button {
-        min-height: 44px; padding: 0 16px; border-radius: 10px;
-        border: 1px solid rgba(255,255,255,.3);
-        background: rgba(8,15,28,.85); color: #ffe9bd; font-size: 14px; font-weight: 700;
-      }
 
       /* ---------- 토스트 ---------- */
       #toast {
@@ -213,18 +196,9 @@
       <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z" fill="currentColor" stroke="none"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>
     </button>
 
-    <div id="test-banner" hidden>테스트 모드 · 실제 카운터에 기록되지 않아요</div>
-
     <div class="hud-bottom">
       <p class="drag-hint">트리를 손가락으로 돌려 360° 둘러보세요 · 트리를 톡 누르거나 아래 버튼을 누르면 장식이 달려요</p>
       <button id="touch-btn" type="button">트리 터치하기</button>
-      <div id="test-panel" hidden>
-        <button type="button" data-test="1">+1</button>
-        <button type="button" data-test="10">+10</button>
-        <button type="button" data-test="100">100회</button>
-        <button type="button" data-test="915">915 완공</button>
-        <button type="button" data-test="0">처음으로</button>
-      </div>
     </div>
 
     <div id="toast" role="status"></div>
@@ -264,16 +238,12 @@
       /* ============================================================
          속초 효성해링턴 트리 — 주민 공동 누적 크리스마스 트리 이벤트
          공용 카운터: Supabase (touches 테이블 + add_touch RPC + Realtime)
-         테스트 모드: ?test=1 (Supabase에 기록하지 않음)
          ============================================================ */
 
       var GOAL = 915;
       var TOTAL_ORN = 92;
       var SB_URL = 'https://tcvkfankjwomnapuwjoq.supabase.co';
       var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjdmtmYW5randvbW5hcHV3am9xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU1OTI0MDUsImV4cCI6MjExMTE2ODQwNX0.ypF1fnY-VL7fcS6tI60KC6qHnKiF1IWpcx11s3kdK8o';
-
-      var qs = new URLSearchParams(location.search);
-      var TEST_MODE = qs.get('test') === '1';
 
       function $(id) { return document.getElementById(id); }
 
@@ -1276,7 +1246,6 @@
         }, 700);
       }
       function connectRealtime() {
-        if (TEST_MODE) return;
         var ws;
         try {
           ws = new WebSocket('wss://tcvkfankjwomnapuwjoq.supabase.co/realtime/v1/websocket?apikey=' + SB_KEY + '&vsn=1.0.0');
@@ -1326,10 +1295,9 @@
       }
 
       function refreshTotal() {
-        if (TEST_MODE) return;
         fetchTotal().then(function (total) {
           setConn(true);
-          if (typeof total === 'number' && total !== state.count) setCount(total, false);
+          if (typeof total === 'number' && total !== state.count) setCount(total);
           try { localStorage.setItem('hh-tree-last-total', String(state.count)); } catch (e) { /* 무시 */ }
         }).catch(function () { /* 다음 폴링/실시간에서 복구 */ });
       }
@@ -1350,7 +1318,7 @@
         state.connected = on;
         var box = $('conn-status');
         box.classList.toggle('on', on);
-        $('conn-text').textContent = TEST_MODE ? '테스트 모드 (기록 안 함)' : (on ? '실시간으로 함께 쌓는 중' : '연결 중…');
+        $('conn-text').textContent = on ? '실시간으로 함께 쌓는 중' : '연결 중…';
       }
 
       function nextThreshold(c) {
@@ -1392,7 +1360,7 @@
       }
 
       var countReady = false; /* 첫 조회로 인한 점프에는 마일스톤 팝업을 띄우지 않음 */
-      function setCount(n, fromTest) {
+      function setCount(n) {
         if (typeof n !== 'number' || isNaN(n)) return;
         if (n < 0) n = 0;
         var prev = state.count;
@@ -1422,11 +1390,6 @@
           : '주민 여러분의 터치 ' + state.count + '회가 모여 광장 트리가 완성됐어요. 함께해 주셔서 감사합니다.';
         var list = $('participant-list');
         list.innerHTML = '';
-        if (TEST_MODE) {
-          list.innerHTML = '<span class="chip">' + escapeHtml(state.nickname || '테스트주민') + '</span><span class="empty-note">테스트 모드에서는 실제 참여 명단이 표시되지 않아요.</span>';
-          $('complete').hidden = false;
-          return;
-        }
         list.innerHTML = '<span class="empty-note">함께한 주민 명단을 불러오는 중…</span>';
         $('complete').hidden = false;
         fetchParticipants().then(function (names) {
@@ -1457,11 +1420,6 @@
       /* ---------- 터치 처리 ---------- */
       function doTouch() {
         ensureAudio();
-        if (TEST_MODE) {
-          setCount(state.count + 1, true);
-          playJingle();
-          return;
-        }
         if (!state.nickname) { openNickModal(); return; }
         var now = Date.now();
         if (now - state.lastTouchAt < 3000) {
@@ -1479,8 +1437,8 @@
             state.lastTouchAt = Date.now();
             state.myToday = Math.min(5, state.myToday + 1);
             saveMyToday();
-            if (res.total != null) setCount(res.total, false);
-            else { setCount(state.count + 1, false); scheduleRefetch(); }
+            if (res.total != null) setCount(res.total);
+            else { setCount(state.count + 1); scheduleRefetch(); }
             playJingle();
             try { localStorage.setItem('hh-tree-last-total', String(state.count)); } catch (e) { /* 무시 */ }
           } else if (res.type === 'daily_limit') {
@@ -1525,15 +1483,7 @@
           showError(e && e.message ? e.message : '3D 초기화 실패');
         }
 
-        if (TEST_MODE) {
-          $('test-banner').hidden = false;
-          $('test-panel').hidden = false;
-          if (!state.nickname) state.nickname = '테스트주민';
-          setConn(false);
-          countReady = true;
-        } else {
-          setTimeout(function () { countReady = true; }, 3000);
-        }
+        setTimeout(function () { countReady = true; }, 3000);
         renderCount();
         if (state.count > 0) { state.shownCount = state.count; renderCount(); }
 
@@ -1544,15 +1494,13 @@
           }, 1200);
         }
 
-        if (!TEST_MODE) {
-          refreshTotal();
-          connectRealtime();
-          setInterval(function () { if (document.visibilityState === 'visible') refreshTotal(); }, 30000);
-          document.addEventListener('visibilitychange', function () {
-            if (document.visibilityState === 'visible') refreshTotal();
-          });
-          if (!state.nickname) setTimeout(openNickModal, 700);
-        }
+        refreshTotal();
+        connectRealtime();
+        setInterval(function () { if (document.visibilityState === 'visible') refreshTotal(); }, 30000);
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState === 'visible') refreshTotal();
+        });
+        if (!state.nickname) setTimeout(openNickModal, 700);
 
         $('touch-btn').addEventListener('click', doTouch);
         $('nick-save').addEventListener('click', saveNickname);
@@ -1569,27 +1517,6 @@
           if (!state.muted) { ensureAudio(); playJingle(); }
         });
         document.addEventListener('pointerdown', ensureAudio, { once: true });
-
-        if (TEST_MODE) {
-          document.querySelectorAll('#test-panel button').forEach(function (b) {
-            b.addEventListener('click', function () {
-              var v = parseInt(b.getAttribute('data-test'), 10);
-              ensureAudio();
-              if (v === 0) {
-                state.completed = false; state.ceremonyShown = false;
-                lastOrnShown = -1; lastStage = -1;
-                setCount(0, true);
-                toast('테스트 카운터를 처음으로 되돌렸어요.');
-              } else if (v === 1 || v === 10) {
-                setCount(Math.min(GOAL, state.count + v), true);
-                playJingle();
-              } else {
-                setCount(v, true);
-                playJingle();
-              }
-            });
-          });
-        }
       }
 
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
