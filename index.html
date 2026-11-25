@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>우리 아파트 크리스마스 트리 · 915</title>
+<meta name="theme-color" content="#08131f" />
+<meta name="description" content="속초 효성해링턴 플레이스 주민이 함께 만드는 3D 크리스마스 트리. 915번의 손길로 완성됩니다." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1a2b'/%3E%3Cpath d='M32 9l13 21H19z' fill='%2348a86f'/%3E%3Cpath d='M32 25l17 23H15z' fill='%232f8a55'/%3E%3Crect x='29' y='47' width='6' height='9' rx='2' fill='%237a4c2a'/%3E%3Ccircle cx='32' cy='9' r='3.4' fill='%23f6c453'/%3E%3C/svg%3E" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="🎄 속초 효성해링턴 크리스마스 트리" />
+<meta property="og:description" content="속초 효성해링턴 플레이스 주민이 함께 만드는 3D 트리 — 915번의 손길이 모이면 완성됩니다. 카페에서 링크를 눌러 참여하세요." />
+<meta property="og:url" content="https://sisday-dev.github.io/christmas-tree-event/" />
+<meta property="og:image" content="https://sisday-dev.github.io/christmas-tree-event/assets/og-tree.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <p class="brand-kicker">속초 효성해링턴 플레이스</p>
+      <h1>우리 아파트 크리스마스 트리</h1>
+    </div>
+    <button class="icon-btn" id="muteBtn" type="button" aria-pressed="false" aria-label="효과음 끄기">
+      <span id="muteIcon" aria-hidden="true">🔊</span>
+    </button>
+  </header>
+
+  <section class="meter" aria-label="트리 진행 상황">
+    <div class="meter-row">
+      <p class="meter-label">함께 단 장식</p>
+      <button class="nick" id="nickBtn" type="button" aria-label="내 카페 닉네임 바꾸기">
+        <span id="nickName">닉네임</span>
+        <em id="remainChip">오늘 5번</em>
+      </button>
+    </div>
+    <div class="count">
+      <strong id="totalNum">0</strong><span class="goal">/ <b id="goalNum">915</b></span>
+    </div>
+    <div class="bar" id="bar" role="progressbar" aria-valuemin="0" aria-valuemax="915" aria-valuenow="0" aria-label="완성도">
+      <i id="barFill"></i>
+      <div class="marks" id="marks" aria-hidden="true"></div>
+    </div>
+    <p class="stage-note" id="stageNote">아직 민둥 트리예요 · 첫 장식을 달아 주세요</p>
+  </section>
+
+  <main class="stage" id="stage" role="button" tabindex="0"
+        aria-label="크리스마스 트리. 끌어서 360도 돌려 볼 수 있고, 짧게 누르면 장식이 하나씩 달립니다.">
+    <canvas class="scene3d" id="scene3d" aria-hidden="true"></canvas>
+    <div class="stage-loading" id="stageLoading" aria-hidden="true"><i></i><span>트리를 세우는 중…</span></div>
+    <p class="orbit-hint" id="orbitHint" aria-hidden="true"><span>↔</span> 끌어서 360° 돌려 보세요</p>
+  </main>
+
+  <footer class="dock">
+    <p class="next-text" id="nextText">첫 장식까지 <b>1</b>번 남았어요!</p>
+    <div class="pips" id="pips" aria-hidden="true"></div>
+    <p class="hint" id="hint">트리를 콕 눌러 장식을 달아 주세요</p>
+  </footer>
+</div>
+
+<!-- 토스트 -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- 닉네임 입력 시트 -->
+<div class="sheet-wrap" id="nickSheet" hidden>
+  <div class="sheet-scrim" data-close-nick></div>
+  <form class="sheet" id="nickForm" novalidate>
+    <div class="sheet-grip" aria-hidden="true"></div>
+    <p class="sheet-kicker">🎄 반가워요!</p>
+    <h2>카페에서 쓰는 닉네임을 알려 주세요</h2>
+    <p class="sheet-desc">한 번만 입력하면 이 기기에 기억해 둘게요.<br />동·호수는 받지 않아요.</p>
+    <input class="sheet-input" id="nickInput" type="text" maxlength="12" autocomplete="nickname"
+           enterkeyhint="done" placeholder="예: 산타러버" aria-label="카페 닉네임" />
+    <p class="sheet-warn" id="nickWarn" role="alert"></p>
+    <button class="sheet-btn" type="submit">트리 꾸미러 가기</button>
+  </form>
+</div>
+
+<!-- 완공 화면 -->
+<div class="done" id="done" hidden>
+  <div class="done-scrim"></div>
+  <div class="done-card" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+    <div class="done-star" aria-hidden="true">★</div>
+    <p class="done-kicker">915번의 손길</p>
+    <h2 id="doneTitle">트리가 완성됐어요!</h2>
+    <p class="done-desc">우리 아파트 주민 <b id="doneCount">0</b>명이 함께 만들었어요.<br />메리 크리스마스 🎄</p>
+    <div class="done-chips" id="doneChips"></div>
+    <p class="done-note" id="doneNote" hidden>🧪 테스트 모드 · 샘플 참여자가 포함되어 있어요</p>
+    <button class="done-btn" id="doneClose" type="button">트리 보러 가기</button>
+  </div>
+</div>
+
+<!-- 개발 테스트용 바 (?test=1 일 때만) -->
+<div class="devbar" id="devbar" hidden>
+  <span class="devbar-tag">🧪 테스트</span>
+  <button type="button" data-dev="1">+1</button>
+  <button type="button" data-dev="10">+10</button>
+  <button type="button" data-dev="100">100회</button>
+  <button type="button" data-dev="500">500회</button>
+  <button type="button" data-dev="done">915 완공</button>
+  <button type="button" data-dev="reset">초기화</button>
+  <button type="button" class="devbar-min" data-dev="hide" aria-label="테스트 바 접기">−</button>
+</div>
+<button class="devtab" id="devTab" type="button" hidden aria-label="테스트 바 열기">🧪</button>
+
+<script src="vendor/three.min.js"></script>
+<script src="tree-data.js"></script>
+<script src="tree-layout.js"></script>
+<script src="supabaseClient.js"></script>
+<script src="scene3d.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
